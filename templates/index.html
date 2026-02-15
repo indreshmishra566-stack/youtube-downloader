@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Pro YouTube Downloader</title>
+
+<style>
+
+body{
+background:#0f172a;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+.container{
+
+margin-top:50px;
+}
+
+input{
+
+width:400px;
+padding:12px;
+border-radius:5px;
+border:none;
+}
+
+button{
+
+padding:12px;
+border:none;
+border-radius:5px;
+background:red;
+color:white;
+cursor:pointer;
+margin:5px;
+}
+
+img{
+
+margin-top:20px;
+width:300px;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+<h1>YouTube Downloader Pro</h1>
+
+
+<input type="text" id="url" placeholder="Paste URL">
+
+<br><br>
+
+<button onclick="getInfo()">Show Info</button>
+
+
+<h2 id="title"></h2>
+
+<img id="thumbnail">
+
+
+<br><br>
+
+<button onclick="download('bestvideo[height=1080]+bestaudio/best')">
+
+Download 1080p
+
+</button>
+
+
+<button onclick="download('bestvideo[height=720]+bestaudio/best')">
+
+Download 720p
+
+</button>
+
+
+<button onclick="download('bestvideo[height=480]+bestaudio/best')">
+
+Download 480p
+
+</button>
+
+
+<button onclick="download('mp3')">
+
+Download MP3
+
+</button>
+
+</div>
+
+
+
+<script>
+
+
+function getInfo(){
+
+let url = document.getElementById("url").value
+
+fetch("/get_info",{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/x-www-form-urlencoded"
+
+},
+
+body:"url="+url
+
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+document.getElementById("title").innerText=data.title
+
+document.getElementById("thumbnail").src=data.thumbnail
+
+})
+
+}
+
+
+
+function download(q){
+
+let url=document.getElementById("url").value
+
+let form=document.createElement("form")
+
+form.method="POST"
+form.action="/download"
+
+let input1=document.createElement("input")
+input1.name="url"
+input1.value=url
+
+let input2=document.createElement("input")
+input2.name="quality"
+input2.value=q
+
+form.appendChild(input1)
+form.appendChild(input2)
+
+document.body.appendChild(form)
+
+form.submit()
+
+}
+
+</script>
+
+</body>
+
+</html>
