@@ -27,6 +27,7 @@ def download():
     filename = f"{DOWNLOAD_FOLDER}/{uuid.uuid4()}.%(ext)s"
 
 
+    # BEST anti-bot format
     if quality == "mp3":
 
         format_code = "bestaudio/best"
@@ -41,7 +42,7 @@ def download():
 
     else:
 
-        format_code = "best"
+        format_code = "bestvideo+bestaudio/best"
 
 
 
@@ -55,19 +56,25 @@ def download():
 
         "merge_output_format": "mp4",
 
-        # ⭐ MOST IMPORTANT LINE ⭐
-        "cookiefile": "cookies.txt",
-
-        "nocheckcertificate": True,
+        # ⭐ PERMANENT BOT FIX ⭐
+        "extractor_args": {
+            "youtube": {
+                "player_client": [
+                    "android",
+                    "android_creator",
+                    "web"
+                ]
+            }
+        },
 
         "http_headers": {
 
-            "User-Agent": "Mozilla/5.0"
+            "User-Agent":
+            "com.google.android.youtube/17.31.35 (Linux; Android 11)"
 
         }
 
     }
-
 
 
     if quality == "mp3":
@@ -79,7 +86,6 @@ def download():
             "preferredcodec": "mp3"
 
         }]
-
 
 
     try:
@@ -98,10 +104,9 @@ def download():
         return send_file(filepath, as_attachment=True)
 
 
-
     except Exception as e:
 
-        return f"Download failed: {str(e)}"
+        return f"Error: {str(e)}"
 
 
 
@@ -111,4 +116,4 @@ if __name__ == "__main__":
 
     app.run(host="0.0.0.0", port=port)
 
- 
+
