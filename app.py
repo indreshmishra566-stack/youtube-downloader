@@ -7,20 +7,29 @@ app = Flask(__name__)
 
 DOWNLOAD_FOLDER = "downloads"
 
-# Create downloads folder
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 
-# =========================
-# GET VIDEO INFO
-# =========================
+# ======================
+# HOME
+# ======================
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+
+# ======================
+# GET INFO
+# ======================
+
 @app.route("/get_info", methods=["POST"])
 def get_info():
 
     url = request.form.get("url")
 
     if not url:
-        return jsonify({"error": "No URL provided"}), 400
+        return jsonify({"error": "No URL"}), 400
 
     try:
 
@@ -28,16 +37,9 @@ def get_info():
 
             'quiet': True,
 
-            'noplaylist': True,
-
-            # ✅ VERY IMPORTANT LINE (BOT FIX)
             'cookiefile': 'cookies.txt',
 
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['android', 'web']
-                }
-            }
+            'noplaylist': True
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -57,58 +59,71 @@ def get_info():
         return jsonify({"error": str(e)}), 500
 
 
-# =========================
-# DOWNLOAD VIDEO / MP3
-# =========================
+# ======================
+# DOWNLOAD
+# ======================
+
 @app.route("/download", methods=["POST"])
 def download():
 
     url = request.form.get("url")
 
-    quality = request.form.get("quality", "best")
+    quality = request.form.get("quality")
 
     if not url:
+        return "URL missing"
 
-        return "URL required", 400
+
+    filename = f"{DOWNLOAD_FOLDER}/{uuid.uuid4()}.%(ext)s"
+
+
+    # FORMAT FIX
+
+    if quality == "mp3":
+
+        format_code = "bestaudio/best"
+
+    elif quality == "720p":
+
+        format_code = "bestvideo[height<=720]+bestaudio/best"
+
+    elif quality == "1080p":
+
+        format_code = "bestvideo[height<=1080]+bestaudio/best"
+
+    else:
+
+        format_code = "best"
+
+
+    ydl_opts = {
+
+        'format': format_code,
+
+        'outtmpl': filename,
+
+        'cookiefile': 'cookies.txt',
+
+        'merge_output_format': 'mp4',
+
+        'quiet': True,
+
+        'noplaylist': True
+    }
+
+
+    if quality == "mp3":
+
+        ydl_opts['postprocessors'] = [{
+
+            'key': 'FFmpegExtractAudio',
+
+            'preferredcodec': 'mp3'
+
+        }]
+
 
     try:
-
-        filename = f"{DOWNLOAD_FOLDER}/{uuid.uuid4()}.%(ext)s"
-
-        ydl_opts = {
-
-            'format': 'bestaudio/best' if quality == "mp3" else quality,
-
-            'outtmpl': filename,
-
-            # ✅ VERY IMPORTANT LINE (BOT FIX)
-            'cookiefile': 'cookies.txt',
-
-            'noplaylist': True,
-
-            'quiet': True,
-
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['android', 'web']
-                }
-            }
-        }
-
-
-        # Convert to MP3
-        if quality == "mp3":
-
-            ydl_opts['postprocessors'] = [{
-
-                'key': 'FFmpegExtractAudio',
-
-                'preferredcodec': 'mp3',
-
-                'preferredquality': '192'
-
-            }]
-
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
@@ -123,32 +138,20 @@ def download():
 
         return send_file(filepath, as_attachment=True)
 
-
     except Exception as e:
 
-        return f"Download failed: {str(e)}", 500
+        return f"Download failed: {str(e)}"
 
 
-# =========================
-# HOME PAGE
-# =========================
-@app.route("/")
-def home():
+# ======================
+# RUN
+# ======================
 
-    return render_template("index.html")
-
-
-# =========================
-# RUN FOR RENDER
-# =========================
 if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
 
     app.run(host="0.0.0.0", port=port)
 
-
-          
-
-
-
+  
+       
