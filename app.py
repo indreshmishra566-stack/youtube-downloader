@@ -5,22 +5,31 @@ import uuid
 
 app = Flask(__name__)
 
-DOWNLOAD_FOLDER = "downloads"
+# ======================
+# FOLDERS
+# ======================
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DOWNLOAD_FOLDER = os.path.join(BASE_DIR, "downloads")
+
+COOKIE_FILE = os.path.join(BASE_DIR, "cookies.txt")
 
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 
 # ======================
-# HOME
+# HOME PAGE
 # ======================
 
 @app.route("/")
 def home():
+
     return render_template("index.html")
 
 
 # ======================
-# GET INFO
+# GET VIDEO INFO
 # ======================
 
 @app.route("/get_info", methods=["POST"])
@@ -29,17 +38,18 @@ def get_info():
     url = request.form.get("url")
 
     if not url:
-        return jsonify({"error": "No URL"}), 400
+
+        return jsonify({"error": "URL missing"}), 400
 
     try:
 
         ydl_opts = {
 
-            'quiet': True,
+            "quiet": True,
 
-            'cookiefile': 'cookies.txt',
+            "cookiefile": COOKIE_FILE,
 
-            'noplaylist': True
+            "noplaylist": True
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -68,13 +78,14 @@ def download():
 
     url = request.form.get("url")
 
-    quality = request.form.get("quality")
+    quality = request.form.get("quality", "best")
 
     if not url:
+
         return "URL missing"
 
 
-    filename = f"{DOWNLOAD_FOLDER}/{uuid.uuid4()}.%(ext)s"
+    filename = os.path.join(DOWNLOAD_FOLDER, f"{uuid.uuid4()}.%(ext)s")
 
 
     # FORMAT FIX
@@ -98,28 +109,29 @@ def download():
 
     ydl_opts = {
 
-        'format': format_code,
+        "format": format_code,
 
-        'outtmpl': filename,
+        "outtmpl": filename,
 
-        'cookiefile': 'cookies.txt',
+        "cookiefile": COOKIE_FILE,
 
-        'merge_output_format': 'mp4',
+        "merge_output_format": "mp4",
 
-        'quiet': True,
+        "quiet": True,
 
-        'noplaylist': True
+        "noplaylist": True
     }
 
 
     if quality == "mp3":
 
-        ydl_opts['postprocessors'] = [{
+        ydl_opts["postprocessors"] = [{
 
-            'key': 'FFmpegExtractAudio',
+            "key": "FFmpegExtractAudio",
 
-            'preferredcodec': 'mp3'
+            "preferredcodec": "mp3",
 
+            "preferredquality": "192"
         }]
 
 
@@ -138,13 +150,14 @@ def download():
 
         return send_file(filepath, as_attachment=True)
 
+
     except Exception as e:
 
         return f"Download failed: {str(e)}"
 
 
 # ======================
-# RUN
+# RUN (Render Fix)
 # ======================
 
 if __name__ == "__main__":
@@ -153,5 +166,3 @@ if __name__ == "__main__":
 
     app.run(host="0.0.0.0", port=port)
 
-  
-       
