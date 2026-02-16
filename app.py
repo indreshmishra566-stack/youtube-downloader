@@ -24,15 +24,19 @@ def download():
 
 
     if quality == "mp3":
+
         format_code = "bestaudio/best"
 
     elif quality == "720p":
+
         format_code = "bestvideo[height<=720]+bestaudio/best"
 
     elif quality == "1080p":
+
         format_code = "bestvideo+bestaudio/best"
 
     else:
+
         format_code = "best"
 
 
@@ -46,16 +50,27 @@ def download():
 
         "merge_output_format": "mp4",
 
-        # ✅ THIS IS FINAL FIX
+
+        # ✅ THIS IS THE REAL FIX
         "extractor_args": {
 
             "youtube": {
 
-                "player_client": ["android", "web"]
+                "player_client": ["android_creator"]
 
             }
 
+        },
+
+
+        # ✅ ADD THIS
+        "http_headers": {
+
+            "User-Agent":
+            "com.google.android.youtube/17.31.35 (Linux; U; Android 11)"
+
         }
+
     }
 
 
@@ -77,23 +92,4 @@ def download():
 
             filepath = ydl.prepare_filename(info)
 
-            if quality == "mp3":
-                filepath = filepath.rsplit(".", 1)[0] + ".mp3"
-
-
-        return send_file(filepath, as_attachment=True)
-
-
-    except Exception as e:
-
-        return f"Download failed: {str(e)}"
-
-
-if __name__ == "__main__":
-
-    port = int(os.environ.get("PORT", 5000))
-
-    app.run(host="0.0.0.0", port=port)
-
-
-
+            if quali
