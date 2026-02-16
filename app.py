@@ -7,13 +7,13 @@ app = Flask(__name__)
 
 DOWNLOAD_FOLDER = "downloads"
 
-# create download folder
+# Create downloads folder
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 
-# ===============================
+# =========================
 # GET VIDEO INFO
-# ===============================
+# =========================
 @app.route("/get_info", methods=["POST"])
 def get_info():
 
@@ -30,7 +30,7 @@ def get_info():
 
             'noplaylist': True,
 
-            # VERY IMPORTANT FINAL STEP
+            # ✅ VERY IMPORTANT LINE (BOT FIX)
             'cookiefile': 'cookies.txt',
 
             'extractor_args': {
@@ -57,9 +57,9 @@ def get_info():
         return jsonify({"error": str(e)}), 500
 
 
-# ===============================
+# =========================
 # DOWNLOAD VIDEO / MP3
-# ===============================
+# =========================
 @app.route("/download", methods=["POST"])
 def download():
 
@@ -68,6 +68,7 @@ def download():
     quality = request.form.get("quality", "best")
 
     if not url:
+
         return "URL required", 400
 
     try:
@@ -80,7 +81,7 @@ def download():
 
             'outtmpl': filename,
 
-            # VERY IMPORTANT FINAL STEP
+            # ✅ VERY IMPORTANT LINE (BOT FIX)
             'cookiefile': 'cookies.txt',
 
             'noplaylist': True,
@@ -94,13 +95,20 @@ def download():
             }
         }
 
+
+        # Convert to MP3
         if quality == "mp3":
 
             ydl_opts['postprocessors'] = [{
+
                 'key': 'FFmpegExtractAudio',
+
                 'preferredcodec': 'mp3',
+
                 'preferredquality': '192'
+
             }]
+
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
@@ -112,6 +120,7 @@ def download():
 
                 filepath = filepath.rsplit(".", 1)[0] + ".mp3"
 
+
         return send_file(filepath, as_attachment=True)
 
 
@@ -120,21 +129,26 @@ def download():
         return f"Download failed: {str(e)}", 500
 
 
-# ===============================
+# =========================
 # HOME PAGE
-# ===============================
+# =========================
 @app.route("/")
 def home():
 
     return render_template("index.html")
 
 
-# ===============================
-# RUN SERVER
-# ===============================
+# =========================
+# RUN FOR RENDER
+# =========================
 if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
 
     app.run(host="0.0.0.0", port=port)
+
+
+          
+
+
 
