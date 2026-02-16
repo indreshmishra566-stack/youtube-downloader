@@ -6,67 +6,13 @@ import uuid
 app = Flask(__name__)
 
 DOWNLOAD_FOLDER = "downloads"
-COOKIE_FILE = "cookies.txt"
 
-# Create folders
+# create download folder
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 
 # ===============================
-# COMMON YT-DLP OPTIONS
-# ===============================
-def get_ydl_opts(quality):
-
-    filename = f"{DOWNLOAD_FOLDER}/{uuid.uuid4()}.%(ext)s"
-
-    ydl_opts = {
-
-        "outtmpl": filename,
-
-        "quiet": True,
-
-        "noplaylist": True,
-
-        "nocheckcertificate": True,
-
-        "ignoreerrors": False,
-
-        "no_warnings": True,
-
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["android", "web"]
-            }
-        }
-    }
-
-    # Use cookies if exists
-    if os.path.exists(COOKIE_FILE):
-
-        ydl_opts["cookiefile"] = COOKIE_FILE
-
-
-    # MP3
-    if quality == "mp3":
-
-        ydl_opts["format"] = "bestaudio/best"
-
-        ydl_opts["postprocessors"] = [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "mp3",
-            "preferredquality": "192"
-        }]
-
-    else:
-
-        ydl_opts["format"] = quality
-
-
-    return ydl_opts
-
-
-# ===============================
-# GET INFO
+# GET VIDEO INFO
 # ===============================
 @app.route("/get_info", methods=["POST"])
 def get_info():
@@ -74,12 +20,25 @@ def get_info():
     url = request.form.get("url")
 
     if not url:
-
-        return jsonify({"error": "Enter URL"}), 400
+        return jsonify({"error": "No URL provided"}), 400
 
     try:
 
-        ydl_opts = get_ydl_opts("best")
+        ydl_opts = {
+
+            'quiet': True,
+
+            'noplaylist': True,
+
+            # VERY IMPORTANT FINAL STEP
+            'cookiefile': 'cookies.txt',
+
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web']
+                }
+            }
+        }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
@@ -89,9 +48,7 @@ def get_info():
 
                 "title": info.get("title"),
 
-                "thumbnail": info.get("thumbnail"),
-
-                "duration": info.get("duration")
+                "thumbnail": info.get("thumbnail")
 
             })
 
@@ -101,7 +58,7 @@ def get_info():
 
 
 # ===============================
-# DOWNLOAD
+# DOWNLOAD VIDEO / MP3
 # ===============================
 @app.route("/download", methods=["POST"])
 def download():
@@ -111,25 +68,51 @@ def download():
     quality = request.form.get("quality", "best")
 
     if not url:
-
         return "URL required", 400
 
     try:
 
-        ydl_opts = get_ydl_opts(quality)
+        filename = f"{DOWNLOAD_FOLDER}/{uuid.uuid4()}.%(ext)s"
+
+        ydl_opts = {
+
+            'format': 'bestaudio/best' if quality == "mp3" else quality,
+
+            'outtmpl': filename,
+
+            # VERY IMPORTANT FINAL STEP
+            'cookiefile': 'cookies.txt',
+
+            'noplaylist': True,
+
+            'quiet': True,
+
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web']
+                }
+            }
+        }
+
+        if quality == "mp3":
+
+            ydl_opts['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192'
+            }]
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
             info = ydl.extract_info(url, download=True)
 
-            filename = ydl.prepare_filename(info)
+            filepath = ydl.prepare_filename(info)
 
             if quality == "mp3":
 
-                filename = filename.rsplit(".", 1)[0] + ".mp3"
+                filepath = filepath.rsplit(".", 1)[0] + ".mp3"
 
-
-        return send_file(filename, as_attachment=True)
+        return send_file(filepath, as_attachment=True)
 
 
     except Exception as e:
@@ -138,7 +121,7 @@ def download():
 
 
 # ===============================
-# HOME
+# HOME PAGE
 # ===============================
 @app.route("/")
 def home():
@@ -147,7 +130,7 @@ def home():
 
 
 # ===============================
-# RUN
+# RUN SERVER
 # ===============================
 if __name__ == "__main__":
 
