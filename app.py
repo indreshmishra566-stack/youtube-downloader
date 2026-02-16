@@ -1,33 +1,3 @@
-from flask import Flask, render_template, request, send_file
-import yt_dlp
-import os
-import uuid
-
-app = Flask(__name__)
-
-# create downloads folder
-DOWNLOAD_FOLDER = "downloads"
-os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
-
-
-# home page
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-
-# download route
-@app.route("/download", methods=["POST"])
-def download():
-
-    url = request.form.get("url")
-    quality = request.form.get("quality")
-
-    if not url:
-        return "URL missing"
-
-    filename = f"{DOWNLOAD_FOLDER}/{uuid.uuid4()}.%(ext)s"
-
 
     # select format
     if quality == "mp3":
